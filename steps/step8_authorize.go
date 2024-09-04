@@ -24,7 +24,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	envPassword, exists := os.LookupEnv("TODO_PASSWORD")
 
 	if len(envPassword) == 0 || !exists {
-		writeError(w, Token{Error: "не определён пароль в переменной окружения"})
+		writeInfo(w, Token{Error: "не определён пароль в переменной окружения"})
 		return
 	}
 
@@ -33,7 +33,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Token{Error: err.Error()})
+		writeInfo(w, Token{Error: err.Error()})
 		return
 	}
 
@@ -41,7 +41,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 
 	if err = json.Unmarshal(buf.Bytes(), &p); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: err.Error()})
+		writeInfo(w, Task{Error: err.Error()})
 		return
 	}
 
@@ -57,17 +57,17 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		signedToken, err := token.SignedString(secretKey)
 
 		if err != nil {
-			writeError(w, Token{Error: err.Error()})
+			writeInfo(w, Token{Error: err.Error()})
 			return
 		}
 
 		tok.Token = signedToken
-		writeError(w, Token{Token: tok.Token})
+		writeInfo(w, Token{Token: tok.Token})
 		return
 
 	}
 
-	writeError(w, Token{Error: "неверный пароль"})
+	writeInfo(w, Token{Error: "неверный пароль"})
 }
 
 func authTask(next http.HandlerFunc) http.HandlerFunc {
@@ -75,7 +75,7 @@ func authTask(next http.HandlerFunc) http.HandlerFunc {
 		_, exists := os.LookupEnv("TODO_PASSWORD")
 
 		if !exists {
-			writeError(w, Token{Error: "не определён пароль в переменной окружения"})
+			writeInfo(w, Token{Error: "не определён пароль в переменной окружения"})
 			return
 		}
 
@@ -96,20 +96,20 @@ func authTask(next http.HandlerFunc) http.HandlerFunc {
 
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
-				writeError(w, Token{Error: err.Error()})
+				writeInfo(w, Token{Error: err.Error()})
 				return
 			}
 
 			if !jwtToken.Valid {
 				w.WriteHeader(http.StatusUnauthorized)
-				writeError(w, Token{Error: "ошибка аутентификации"})
+				writeInfo(w, Token{Error: "ошибка аутентификации"})
 				return
 			}
 
 			payload, ok := jwtToken.Claims.(jwt.MapClaims)
 			if !ok {
 				w.WriteHeader(http.StatusUnauthorized)
-				writeError(w, Token{Error: "ошибка проверки JWT-токена"})
+				writeInfo(w, Token{Error: "ошибка проверки JWT-токена"})
 				return
 			}
 
@@ -118,7 +118,7 @@ func authTask(next http.HandlerFunc) http.HandlerFunc {
 			hashOK, ok := hashRaw.([]interface{})
 			if !ok {
 				w.WriteHeader(http.StatusUnauthorized)
-				writeError(w, Token{Error: "ошибка проверки JWT-токена"})
+				writeInfo(w, Token{Error: "ошибка проверки JWT-токена"})
 				return
 			}
 
@@ -130,7 +130,7 @@ func authTask(next http.HandlerFunc) http.HandlerFunc {
 
 			if !bytes.Equal(hashPassFromToken, hashPass) {
 				w.WriteHeader(http.StatusUnauthorized)
-				writeError(w, Token{Error: "ошибка аутентификации"})
+				writeInfo(w, Token{Error: "ошибка аутентификации"})
 				return
 			}
 

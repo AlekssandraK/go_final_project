@@ -15,13 +15,13 @@ func CreateDB() {
 		log.Fatal(err)
 	}
 
-	file := os.Getenv("DBFILE")
+	file := os.Getenv("TODO_DBFILE")
 	var dbfile string
 
 	if len(file) > 0 {
 		dbfile = file
 	} else {
-		dbfile = os.Getenv("DBFILE")
+		dbfile = os.Getenv("TODO_DBFILE")
 	}
 
 	dbFile := filepath.Join(filepath.Dir(path), dbfile)

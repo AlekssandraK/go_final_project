@@ -20,7 +20,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -28,7 +28,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -37,12 +37,12 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	tasks, err := SearchField(db, w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: "ошибка поиска задачи"})
+		writeInfo(w, Err{Error: "ошибка поиска задачи"})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	writeError(w, Tasks{Tasks: tasks})
+	writeInfo(w, Tasks{Tasks: tasks})
 }
 
 func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, error) {

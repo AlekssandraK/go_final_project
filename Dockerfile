@@ -1,15 +1,17 @@
 FROM golang:1.22
 
-WORKDIR /app
+ENV CGO_ENABLED=1\
+    GOOS=linux \
+    GOARCH=amd64
 
-COPY go.mod go.sum.
+WORKDIR /app
 
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /todo_app main.go
+RUN  go build -o /todo_app main.go
 
-EXPOSE 7540
+EXPOSE ${TODO_PORT}
 
 CMD ["/todo_app"] 

@@ -22,7 +22,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: err.Error()})
+		writeInfo(w, Task{Error: err.Error()})
 		return
 	}
 	defer db.Close()
@@ -33,19 +33,19 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 	_, err = buf.ReadFrom(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: err.Error()})
+		writeInfo(w, Task{Error: err.Error()})
 		return
 	}
 
-	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&task); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: err.Error()})
+		writeInfo(w, Task{Error: err.Error()})
 		return
 	}
 
 	if task.Title == "" || task.Title == " " {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Task{Error: "не указан заголовок задачи"})
+		writeInfo(w, Task{Error: "не указан заголовок задачи"})
 		return
 	}
 
@@ -60,7 +60,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 	parseDate, err := time.Parse(DateForFormat, task.Date)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: err.Error()})
+		writeInfo(w, Task{Error: err.Error()})
 		return
 	}
 
@@ -71,7 +71,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 			task.Date, err = NextDateTask(time.Now(), task.Date, task.Repeat)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				writeError(w, Task{Error: "ошибка функции вычисления даты выполнения задачи"})
+				writeInfo(w, Task{Error: "ошибка функции вычисления даты выполнения задачи"})
 				return
 			}
 		}
@@ -82,16 +82,16 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 	insertId, err := Insert(db, task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Task{Error: "ошибка функции добавления записи в БД"})
+		writeInfo(w, Task{Error: "ошибка функции добавления записи в БД"})
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	writeError(w, Task{ID: insertId})
+	writeInfo(w, Task{ID: insertId})
 
 }
 
-func writeError(w http.ResponseWriter, out any) {
+func writeInfo(w http.ResponseWriter, out any) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	json.NewEncoder(w).Encode(out)
 }

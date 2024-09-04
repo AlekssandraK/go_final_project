@@ -3,7 +3,6 @@ package steps
 import (
 	"database/sql"
 	"net/http"
-	"time"
 )
 
 func TaskDone(w http.ResponseWriter, r *http.Request) {
@@ -11,7 +10,7 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -19,7 +18,7 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 	defer db.Close()
@@ -30,7 +29,7 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Err{Error: "задача не найдена"})
+		writeInfo(w, Err{Error: "задача не найдена"})
 		return
 	}
 
@@ -39,28 +38,17 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			writeError(w, Err{Error: "ошибка функции удаления записи БД"})
+			writeInfo(w, Err{Error: "ошибка функции удаления записи БД"})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		writeError(w, Task{})
-		return
-	}
-
-	nextDate, err := NextDateTask(time.Now(), task.Date, task.Repeat)
-	_, err = db.Exec("UPDATE scheduler SET date = :date WHERE id = :id",
-		sql.Named("id", task.ID),
-		sql.Named("date", nextDate))
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: "ошибка функции обновления даты задачи в записи таблицы БД"})
+		writeInfo(w, Task{})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	writeError(w, Task{})
+	writeInfo(w, Task{})
 }
 
 func DeleteId(db *sql.DB, id string) error {
@@ -78,7 +66,7 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -86,7 +74,7 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 	defer db.Close()
@@ -96,7 +84,7 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Err{Error: "задача не найдена"})
+		writeInfo(w, Err{Error: "задача не найдена"})
 		return
 	}
 
@@ -104,11 +92,11 @@ func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Err{Error: "ошибка функции удаления записи БД"})
+		writeInfo(w, Err{Error: "ошибка функции удаления записи БД"})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	writeError(w, Task{})
+	writeInfo(w, Task{})
 
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func GetTaskId(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -30,7 +29,7 @@ func GetTaskId(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 	defer db.Close()
@@ -40,13 +39,13 @@ func GetTaskId(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: "задача не найдена"})
+		writeInfo(w, Err{Error: "задача не найдена"})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 
-	writeError(w, TaskId{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
+	writeInfo(w, TaskId{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
 }
 
 func ScanId(db *sql.DB, id string) (TaskId, error) {
@@ -68,7 +67,7 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -76,7 +75,7 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 	defer db.Close()
@@ -85,26 +84,21 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	_, err = buf.ReadFrom(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
 	var task TaskId
-	if err = json.Unmarshal(buf.Bytes(), &task); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
-		return
-	}
 
-	if _, err := ScanId(db, strconv.Itoa(int(task.ID))); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Err{Error: "задача не найдена"})
+	if err = json.NewDecoder(r.Body).Decode(&task); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
 	if task.Title == "" || task.Title == " " {
 		w.WriteHeader(http.StatusBadRequest)
-		writeError(w, Err{Error: "не указан заголовок задачи"})
+		writeInfo(w, Err{Error: "не указан заголовок задачи"})
 		return
 	}
 
@@ -119,7 +113,7 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 	parseDate, err := time.Parse(DateForFormat, task.Date)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: err.Error()})
+		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
 
@@ -130,13 +124,13 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 			task.Date, err = NextDateTask(time.Now(), task.Date, task.Repeat)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				writeError(w, Err{Error: "ошибка функции вычисления даты выполнения задачи"})
+				writeInfo(w, Err{Error: "ошибка функции вычисления даты выполнения задачи"})
 				return
 			}
 		}
 	}
 
-	_, err = db.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
+	res, err := db.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
 		sql.Named("id", task.ID),
 		sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
@@ -144,12 +138,25 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 		sql.Named("repeat", task.Repeat))
 
 	if err != nil {
+		writeInfo(w, err.Error())
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		writeInfo(w, err.Error())
+	}
+	if rowsAffected == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		writeInfo(w, Err{Error: "задача не найдена"})
+		return
+	}
+
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeError(w, Err{Error: "ошибка функции изменения записи в БД"})
+		writeInfo(w, Err{Error: "ошибка функции изменения записи в БД"})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	writeError(w, Task{})
+	writeInfo(w, Task{})
 
 }

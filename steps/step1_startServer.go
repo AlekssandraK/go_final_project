@@ -17,7 +17,7 @@ func StartServer() {
 	mux.HandleFunc("/api/tasks/", authTask(searchHandler))
 	mux.HandleFunc("/api/task/done", authTask(TaskDone))
 
-	portStr, exists := os.LookupEnv("PORT")
+	portStr, exists := os.LookupEnv("TODO_PORT")
 	var currPort string
 	if exists {
 		currPort = portStr
