@@ -7,7 +7,6 @@ import (
 )
 
 func GetTaskId(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	//db, err := sql.Open("sqlite", "scheduler.db")
 	defer db.Close()
 
 	id := r.FormValue("id")
