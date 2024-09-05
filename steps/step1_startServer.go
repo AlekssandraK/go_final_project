@@ -1,13 +1,19 @@
 package steps
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 )
 
-func StartServer() {
+const port = "7540"
+
+var dbConn *sql.DB
+
+func StartServer(db *sql.DB) {
+	dbConn = db
 	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 
@@ -22,30 +28,29 @@ func StartServer() {
 	if exists {
 		currPort = portStr
 	} else {
-		currPort = "7540"
+		currPort = port
 	}
-	err := http.ListenAndServe((":" + currPort), mux)
 	fmt.Printf("Прослушивание порта: %s", currPort)
+	err := http.ListenAndServe((":" + currPort), mux)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Завершение работы")
 
 }
 
 func selectFunc(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		AddTaskWM(w, r)
+		AddTaskWM(w, r, dbConn)
 		return
 	case http.MethodGet:
-		GetTaskId(w, r)
+		GetTaskId(w, r, dbConn)
 		return
 	case http.MethodPut:
-		EditTask(w, r)
+		EditTask(w, r, dbConn)
 		return
 	case http.MethodDelete:
-		DeleteTask(w, r)
+		DeleteTask(w, r, dbConn)
 		return
 	}
 }

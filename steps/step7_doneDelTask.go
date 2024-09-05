@@ -61,16 +61,9 @@ func DeleteId(db *sql.DB, id string) error {
 	return nil
 }
 
-func DeleteTask(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
+func DeleteTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	err = db.Ping()
+	err := db.Ping()
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -9,7 +9,8 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func CreateDB() {
+func CreateDB() bool {
+	isCreated := false
 	path, err := os.Executable()
 	if err != nil {
 		log.Fatal(err)
@@ -37,7 +38,7 @@ func CreateDB() {
 		db, err := sql.Open("sqlite", dbFile)
 		if err != nil {
 			log.Fatal(err)
-			return
+			isCreated = false
 		}
 		defer db.Close()
 
@@ -50,6 +51,7 @@ func CreateDB() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		isCreated = true
 	}
-
+	return isCreated
 }

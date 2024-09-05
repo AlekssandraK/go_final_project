@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const limit = 20
+
 type Tasks struct {
 	Tasks []Task `json:"tasks"`
 }
@@ -47,7 +49,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, error) {
 	search := r.FormValue("search")
-	tasks := make([]Task, 0, 20)
+	tasks := make([]Task, 0, limit)
 
 	reg, err := regexp.Compile("\\d{2}.\\d{2}.\\d{4}")
 
@@ -67,9 +69,9 @@ func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, er
 
 		timeSearch := parseSearch.Format(DateForFormat)
 
-		rows, err = db.Query("SELECT * FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
+		rows, err = db.Query("SELECT id, date, title, comment, repeat FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
 			sql.Named("search", "%"+timeSearch+"%"),
-			sql.Named("limit", 20))
+			sql.Named("limit", limit))
 
 		if err != nil {
 			return tasks, err

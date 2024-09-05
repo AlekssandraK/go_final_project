@@ -1,37 +1,13 @@
 package steps
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/json"
 	"net/http"
 	"time"
 )
 
-type TaskId struct {
-	ID      int64  `json:"id,string"`
-	Date    string `json:"date"`
-	Title   string `json:"title"`
-	Comment string `json:"comment"`
-	Repeat  string `json:"repeat"`
-}
-
-func GetTaskId(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
+func GetTaskId(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	//db, err := sql.Open("sqlite", "scheduler.db")
 	defer db.Close()
 
 	id := r.FormValue("id")
@@ -45,14 +21,14 @@ func GetTaskId(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	writeInfo(w, TaskId{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
+	writeInfo(w, Task{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
 }
 
-func ScanId(db *sql.DB, id string) (TaskId, error) {
+func ScanId(db *sql.DB, id string) (Task, error) {
 	row := db.QueryRow("SELECT * FROM scheduler WHERE id = :id",
 		sql.Named("id", id))
 
-	var task TaskId
+	var task Task
 	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 
 	if err != nil {
@@ -62,39 +38,9 @@ func ScanId(db *sql.DB, id string) (TaskId, error) {
 	return task, nil
 }
 
-func EditTask(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
+func EditTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-	defer db.Close()
-
-	var buf bytes.Buffer
-	_, err = buf.ReadFrom(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	var task TaskId
-
-	if err = json.NewDecoder(r.Body).Decode(&task); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
+	var task Task
 
 	if task.Title == "" || task.Title == " " {
 		w.WriteHeader(http.StatusBadRequest)

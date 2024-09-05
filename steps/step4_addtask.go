@@ -17,20 +17,14 @@ type Task struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func AddTaskWM(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
+func AddTaskWM(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Task{Error: err.Error()})
-		return
-	}
 	defer db.Close()
 
 	var task Task
 	var buf bytes.Buffer
 
-	_, err = buf.ReadFrom(r.Body)
+	_, err := buf.ReadFrom(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Task{Error: err.Error()})
