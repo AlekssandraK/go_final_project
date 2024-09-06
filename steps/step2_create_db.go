@@ -10,6 +10,7 @@ import (
 )
 
 func InitDB() (dbConn *sql.DB, err error) {
+	DBConn = dbConn
 	path, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -42,5 +43,5 @@ func InitDB() (dbConn *sql.DB, err error) {
 			log.Fatal(err)
 		}
 	}
-	return dbConn, nil
+	return DBConn, nil
 }
