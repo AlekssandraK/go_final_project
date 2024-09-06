@@ -9,24 +9,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-func CreateDB() bool {
-	isCreated := false
+func InitDB() (dbConn *sql.DB, err error) {
 	path, err := os.Executable()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	file := os.Getenv("TODO_DBFILE")
-	var dbfile string
-
-	if len(file) > 0 {
-		dbfile = file
-	} else {
-		dbfile = os.Getenv("TODO_DBFILE")
-	}
-
-	dbFile := filepath.Join(filepath.Dir(path), dbfile)
-	_, err = os.Stat(dbFile)
+	dbfile := os.Getenv("TODO_DBFILE")
+	db := filepath.Join(filepath.Dir(path), dbfile)
+	_, err = os.Stat(db)
 
 	var success bool
 
@@ -35,10 +26,9 @@ func CreateDB() bool {
 	}
 
 	if success {
-		db, err := sql.Open("sqlite", dbFile)
+		db, err := sql.Open("sqlite", db)
 		if err != nil {
 			log.Fatal(err)
-			isCreated = false
 		}
 		defer db.Close()
 
@@ -51,7 +41,6 @@ func CreateDB() bool {
 		if err != nil {
 			log.Fatal(err)
 		}
-		isCreated = true
 	}
-	return isCreated
+	return dbConn, nil
 }

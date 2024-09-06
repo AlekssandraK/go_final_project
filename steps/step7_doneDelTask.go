@@ -6,26 +6,10 @@ import (
 )
 
 func TaskDone(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-	defer db.Close()
 
 	r.Method = http.MethodPost
 	id := r.FormValue("id")
-	task, err := ScanId(db, id)
+	task, err := ScanId(id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -34,7 +18,7 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if task.Repeat == "" || task.Repeat == " " {
-		err = DeleteId(db, id)
+		err = DeleteId(id)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -51,8 +35,8 @@ func TaskDone(w http.ResponseWriter, r *http.Request) {
 	writeInfo(w, Task{})
 }
 
-func DeleteId(db *sql.DB, id string) error {
-	_, err := db.Exec("DELETE FROM scheduler WHERE id = :id", sql.Named("id", id))
+func DeleteId(id string) error {
+	_, err := DBConn.Exec("DELETE FROM scheduler WHERE id = :id", sql.Named("id", id))
 
 	if err != nil {
 		return err
@@ -61,19 +45,19 @@ func DeleteId(db *sql.DB, id string) error {
 	return nil
 }
 
-func DeleteTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func DeleteTask(w http.ResponseWriter, r *http.Request) {
 
-	err := db.Ping()
+	err := DBConn.Ping()
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Err{Error: err.Error()})
 		return
 	}
-	defer db.Close()
+	defer DBConn.Close()
 
 	id := r.FormValue("id")
-	_, err = ScanId(db, id)
+	_, err = ScanId(id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -81,7 +65,7 @@ func DeleteTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	err = DeleteId(db, id)
+	err = DeleteId(id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

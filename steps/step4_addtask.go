@@ -11,16 +11,13 @@ import (
 type Task struct {
 	ID      int64  `json:"id,string,omitempty"`
 	Date    string `json:"date,omitempty"`
-	Title   string `json:"title,omitempty" binding:"required"`
+	Title   string `json:"title,omitempty"`
 	Comment string `json:"comment,omitempty"`
 	Repeat  string `json:"repeat,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
 
-func AddTaskWM(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-
-	defer db.Close()
-
+func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 	var task Task
 	var buf bytes.Buffer
 
@@ -73,7 +70,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		task.Date = task.Date
 	}
 
-	insertId, err := Insert(db, task)
+	insertId, err := Insert(task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Task{Error: "ошибка функции добавления записи в БД"})
@@ -90,8 +87,8 @@ func writeInfo(w http.ResponseWriter, out any) {
 	json.NewEncoder(w).Encode(out)
 }
 
-func Insert(db *sql.DB, task Task) (int64, error) {
-	row, err := db.Exec("INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)",
+func Insert(task Task) (int64, error) {
+	row, err := DBConn.Exec("INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)",
 		sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
 		sql.Named("comment", task.Comment),

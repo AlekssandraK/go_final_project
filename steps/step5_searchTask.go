@@ -18,25 +18,8 @@ type Err struct {
 }
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("sqlite", "scheduler.db")
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	err = db.Ping()
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: err.Error()})
-		return
-	}
-
-	defer db.Close()
-
-	tasks, err := SearchField(db, w, r)
+	tasks, err := SearchField(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Err{Error: "ошибка поиска задачи"})
@@ -47,7 +30,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	writeInfo(w, Tasks{Tasks: tasks})
 }
 
-func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, error) {
+func SearchField(w http.ResponseWriter, r *http.Request) ([]Task, error) {
 	search := r.FormValue("search")
 	tasks := make([]Task, 0, limit)
 
@@ -69,7 +52,7 @@ func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, er
 
 		timeSearch := parseSearch.Format(DateForFormat)
 
-		rows, err = db.Query("SELECT id, date, title, comment, repeat FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
+		rows, err = DBConn.Query("SELECT id, date, title, comment, repeat FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
 			sql.Named("search", "%"+timeSearch+"%"),
 			sql.Named("limit", limit))
 
@@ -97,7 +80,7 @@ func SearchField(db *sql.DB, w http.ResponseWriter, r *http.Request) ([]Task, er
 		return tasks, nil
 	}
 
-	rows, err = db.Query("SELECT * FROM scheduler WHERE title LIKE :search OR comment LIKE :search ORDER BY date LIMIT :limit",
+	rows, err = DBConn.Query("SELECT * FROM scheduler WHERE title LIKE :search OR comment LIKE :search ORDER BY date LIMIT :limit",
 		sql.Named("search", "%"+search+"%"),
 		sql.Named("limit", 20))
 

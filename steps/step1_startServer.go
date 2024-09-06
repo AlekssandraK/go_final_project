@@ -10,11 +10,11 @@ import (
 
 const port = "7540"
 
-var dbConn *sql.DB
+var DBConn *sql.DB
 
 func StartServer(db *sql.DB) {
-	dbConn = db
 	mux := http.NewServeMux()
+	DBConn = db
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 
 	mux.HandleFunc("/api/nextdate", NextDate)
@@ -22,7 +22,6 @@ func StartServer(db *sql.DB) {
 	mux.HandleFunc("/api/task", authTask(selectFunc))
 	mux.HandleFunc("/api/tasks/", authTask(searchHandler))
 	mux.HandleFunc("/api/task/done", authTask(TaskDone))
-
 	portStr, exists := os.LookupEnv("TODO_PORT")
 	var currPort string
 	if exists {
@@ -41,16 +40,16 @@ func StartServer(db *sql.DB) {
 func selectFunc(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
-		AddTaskWM(w, r, dbConn)
+		AddTaskWM(w, r)
 		return
 	case http.MethodGet:
-		GetTaskId(w, r, dbConn)
+		GetTaskId(w, r)
 		return
 	case http.MethodPut:
-		EditTask(w, r, dbConn)
+		EditTask(w, r)
 		return
 	case http.MethodDelete:
-		DeleteTask(w, r, dbConn)
+		DeleteTask(w, r)
 		return
 	}
 }

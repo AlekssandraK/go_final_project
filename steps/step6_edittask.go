@@ -6,11 +6,9 @@ import (
 	"time"
 )
 
-func GetTaskId(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	defer db.Close()
-
+func GetTaskId(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
-	task, err := ScanId(db, id)
+	task, err := ScanId(id)
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -23,8 +21,8 @@ func GetTaskId(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	writeInfo(w, Task{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
 }
 
-func ScanId(db *sql.DB, id string) (Task, error) {
-	row := db.QueryRow("SELECT * FROM scheduler WHERE id = :id",
+func ScanId(id string) (Task, error) {
+	row := DBConn.QueryRow("SELECT * FROM scheduler WHERE id = :id",
 		sql.Named("id", id))
 
 	var task Task
@@ -37,7 +35,7 @@ func ScanId(db *sql.DB, id string) (Task, error) {
 	return task, nil
 }
 
-func EditTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func EditTask(w http.ResponseWriter, r *http.Request) {
 
 	var task Task
 
@@ -75,7 +73,7 @@ func EditTask(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 	}
 
-	res, err := db.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
+	res, err := DBConn.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
 		sql.Named("id", task.ID),
 		sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
