@@ -21,9 +21,9 @@ type P struct {
 }
 
 func auth(w http.ResponseWriter, r *http.Request) {
-	envPassword, exists := os.LookupEnv("TODO_PASSWORD")
+	envPassword := os.Getenv("TODO_PASSWORD")
 
-	if len(envPassword) == 0 || !exists {
+	if len(envPassword) == 0 {
 		writeInfo(w, Token{Error: "не определён пароль в переменной окружения"})
 		return
 	}

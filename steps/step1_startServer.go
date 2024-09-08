@@ -13,12 +13,11 @@ const port = "7540"
 var DBConn *sql.DB
 
 func StartServer(db *sql.DB) {
-	mux := http.NewServeMux()
 	DBConn = db
+	mux := http.NewServeMux()
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
-
-	mux.HandleFunc("/api/nextdate", NextDate)
 	mux.HandleFunc("/api/signin", auth)
+	mux.HandleFunc("/api/nextdate", NextDate)
 	mux.HandleFunc("/api/task", authTask(selectFunc))
 	mux.HandleFunc("/api/tasks/", authTask(searchHandler))
 	mux.HandleFunc("/api/task/done", authTask(TaskDone))

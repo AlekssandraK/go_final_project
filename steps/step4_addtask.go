@@ -28,7 +28,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = json.NewDecoder(r.Body).Decode(&task); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Task{Error: err.Error()})
 		return
