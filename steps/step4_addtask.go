@@ -1,15 +1,15 @@
 package steps
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
 
 type Task struct {
-	ID      int64  `json:"id,string,omitempty"`
+	ID      int64  `json:"id,omitempty"`
 	Date    string `json:"date,omitempty"`
 	Title   string `json:"title,omitempty"`
 	Comment string `json:"comment,omitempty"`
@@ -19,15 +19,7 @@ type Task struct {
 
 func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 	var task Task
-	var buf bytes.Buffer
-
-	_, err := buf.ReadFrom(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Task{Error: err.Error()})
-		return
-	}
-
+	log.Println("add task")
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		writeInfo(w, Task{Error: err.Error()})
@@ -67,6 +59,7 @@ func AddTaskWM(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
+		log.Println("else task date")
 		task.Date = task.Date
 	}
 
@@ -88,6 +81,7 @@ func writeInfo(w http.ResponseWriter, out any) {
 }
 
 func Insert(task Task) (int64, error) {
+	log.Println("insert task in DB")
 	row, err := DBConn.Exec("INSERT INTO scheduler (date, title, comment, repeat) VALUES (:date, :title, :comment, :repeat)",
 		sql.Named("date", task.Date),
 		sql.Named("title", task.Title),

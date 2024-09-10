@@ -18,7 +18,7 @@ func StartServer(db *sql.DB) {
 	mux.Handle("/", http.FileServer(http.Dir("./web")))
 	mux.HandleFunc("/api/signin", auth)
 	mux.HandleFunc("/api/nextdate", NextDate)
-	mux.HandleFunc("/api/task", authTask(selectFunc))
+	mux.HandleFunc("/api/task/", authTask(selectFunc))
 	mux.HandleFunc("/api/tasks/", authTask(searchHandler))
 	mux.HandleFunc("/api/task/done", authTask(TaskDone))
 	portStr, exists := os.LookupEnv("TODO_PORT")
