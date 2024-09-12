@@ -1,10 +1,21 @@
 package steps
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 )
+
+type TaskID struct {
+	ID      int64  `json:"id,string"`
+	Date    string `json:"date"`
+	Title   string `json:"title"`
+	Comment string `json:"comment"`
+	Repeat  string `json:"repeat"`
+}
 
 func GetTaskId(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
@@ -18,14 +29,14 @@ func GetTaskId(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 
-	writeInfo(w, Task{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
+	writeInfo(w, TaskID{ID: task.ID, Date: task.Date, Title: task.Title, Comment: task.Comment, Repeat: task.Repeat})
 }
 
-func ScanId(id string) (Task, error) {
+func ScanId(id string) (TaskID, error) {
 	row := DBConn.QueryRow("SELECT * FROM scheduler WHERE id = :id",
 		sql.Named("id", id))
 
-	var task Task
+	var task TaskID
 	err := row.Scan(&task.ID, &task.Date, &task.Title, &task.Comment, &task.Repeat)
 
 	if err != nil {
@@ -36,8 +47,27 @@ func ScanId(id string) (Task, error) {
 }
 
 func EditTask(w http.ResponseWriter, r *http.Request) {
+	var buff bytes.Buffer
+	_, err := buff.ReadFrom(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeInfo(w, Err{Error: err.Error()})
+		return
+	}
 
-	var task Task
+	var task TaskID
+
+	if err = json.Unmarshal(buff.Bytes(), &task); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		writeInfo(w, Err{Error: err.Error()})
+		return
+	}
+
+	if _, err := ScanId(strconv.Itoa(int(task.ID))); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		writeInfo(w, Err{Error: "задача не найдена"})
+		return
+	}
 
 	if task.Title == "" || task.Title == " " {
 		w.WriteHeader(http.StatusBadRequest)
@@ -73,25 +103,12 @@ func EditTask(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res, err := DBConn.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
+	_, err = DBConn.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
 		sql.Named("id", task.ID),
 		sql.Named("date", task.Date),
 		sql.Named("title", task.Title),
 		sql.Named("comment", task.Comment),
 		sql.Named("repeat", task.Repeat))
-
-	if err != nil {
-		writeInfo(w, err.Error())
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		writeInfo(w, err.Error())
-	}
-	if rowsAffected == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		writeInfo(w, Err{Error: "задача не найдена"})
-		return
-	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

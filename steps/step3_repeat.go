@@ -12,6 +12,7 @@ import (
 const DateForFormat = "20060102"
 
 func NextDate(w http.ResponseWriter, r *http.Request) {
+
 	now, err := time.Parse(DateForFormat, r.FormValue("now"))
 	if err != nil {
 		w.Write([]byte(err.Error()))

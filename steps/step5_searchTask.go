@@ -18,11 +18,10 @@ type Err struct {
 }
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-
 	tasks, err := SearchField(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		writeInfo(w, Err{Error: "ошибка поиска задачи"})
+		writeInfo(w, Err{Error: "ошибка поиска задач"})
 		return
 	}
 
@@ -52,7 +51,7 @@ func SearchField(w http.ResponseWriter, r *http.Request) ([]Task, error) {
 
 		timeSearch := parseSearch.Format(DateForFormat)
 
-		rows, err = DBConn.Query("SELECT id, date, title, comment, repeat FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
+		rows, err = DBConn.Query("SELECT * FROM scheduler WHERE date LIKE :search ORDER BY date LIMIT :limit",
 			sql.Named("search", "%"+timeSearch+"%"),
 			sql.Named("limit", limit))
 
@@ -82,7 +81,7 @@ func SearchField(w http.ResponseWriter, r *http.Request) ([]Task, error) {
 
 	rows, err = DBConn.Query("SELECT * FROM scheduler WHERE title LIKE :search OR comment LIKE :search ORDER BY date LIMIT :limit",
 		sql.Named("search", "%"+search+"%"),
-		sql.Named("limit", 20))
+		sql.Named("limit", limit))
 
 	if err != nil {
 		return tasks, err
